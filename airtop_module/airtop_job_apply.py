@@ -783,6 +783,20 @@ class JobApplicationAutomation:
             print("✅ Clicked on Continue")
    
             await asyncio.sleep(4)
+
+            # Validate the Phone Number
+            correct_phone = await self.client.windows.page_query(
+                session_id=session_id,
+                window_id=window_id,
+                prompt= "Do you see a text 'You must enter a correct phone number.' on the page? Answer only Y/N."
+            )
+ 
+            print(f"Invalid Phone Number? {correct_phone}")
+ 
+            if correct_phone.data.model_response == 'Y':
+                return False, "Invalid Phone Number"
+           
+            await asyncio.sleep(4)
  
             verification_section = await self.client.windows.page_query(
                     session_id=session_id,
@@ -791,7 +805,8 @@ class JobApplicationAutomation:
             )
            
             await asyncio.sleep(2)
- 
+
+            # Verify the email if exists
             print(f"Verifying Email")
  
             if verification_section.data.model_response == 'Y':
