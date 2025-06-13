@@ -718,8 +718,8 @@ class JobApplicationAutomation:
                 print(f"code: {phone_code}, phone: {phone}")
  
                 await self.client.windows.type(
-                    session_id=session.data.id,
-                    window_id=window.data.window_id,
+                    session_id=session_id,
+                    window_id=window_id,
                     element_description=f"Select Field with aria-label='Phone number country' for 'Phone number'",
                     # "Select Field with aria-label='Phone number country' for '{json_obj["name"]}'
                     text=phone_code[0], # json_obj["response"][0]
@@ -728,8 +728,8 @@ class JobApplicationAutomation:
                 await asyncio.sleep(5)
  
                 await self.client.windows.click(
-                    session_id = session.data.id,
-                    window_id=window.data.window_id,
+                    session_id = session_id,
+                    window_id=window_id,
                     element_description=f"Option Field for label='{phone_code}'" # Option Field for label='json_obj["response"]'
                 )
            
@@ -737,8 +737,8 @@ class JobApplicationAutomation:
  
                 # For Entering Phone Number
                 await self.client.windows.type(
-                    session_id=session.data.id,
-                    window_id=window.data.window_id,
+                    session_id=session_id,
+                    window_id=window_id,
                     element_description=f"Input Field of type='tel' for 'Phone Number'",
                     # Input Field of type='tel' for '{json_obj["name"]}'
                     text=phone, # json_obj["response"]
@@ -763,8 +763,8 @@ class JobApplicationAutomation:
             if available_email.data.model_response == 'Y' :
                 # For Entering Email
                 await self.client.windows.type(
-                    session_id=session.data.id,
-                    window_id=window.data.window_id,
+                    session_id=session_id,
+                    window_id=window_id,
                     element_description=f"Input Field of type='email' for 'Email'",
                     # Input Field of type='tel' for '{json_obj["name"]}'
                     text=user_data["email"], # json_obj["response"]
