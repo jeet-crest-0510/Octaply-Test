@@ -799,6 +799,9 @@ class JobApplicationAutomation:
                 # Split the code into digits
                 code = await get_verification_code(target_email=user_data["email"])
                 print(f"Verification Code: {code}")
+
+                if not code:
+                    return False, "Verification code is None"
                 await asyncio.sleep(5)
  
                 # Try to enter the full code in one field
