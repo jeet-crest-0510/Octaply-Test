@@ -293,6 +293,7 @@ async def controller(resume_id=None, jobListingId=None, run_count=0, duplicacy_o
 
         if(run_count>1):
             exit()
+            # return
         if(os.getenv('environment') == 'prod'):
             display=pyvirtualdisplay.Display(visible=0, size=(1920, 1080))
             display.start()
@@ -304,6 +305,7 @@ async def controller(resume_id=None, jobListingId=None, run_count=0, duplicacy_o
             if(resume_id==None):
                 logger.info(f'Resume_id not passed')
                 exit()
+                # return
 
         logger.info(f'Resume_id is: {resume_id}')
         logger.info(f'jobListingId is: {jobListingId}')
@@ -315,11 +317,15 @@ async def controller(resume_id=None, jobListingId=None, run_count=0, duplicacy_o
 
         if(check_user_validity(key)==False):
             logger.info(f"No payment,Resume_id: {resume_id}, jobListingId: {jobListingId}")
+
+            # raise Exception()
             exit()
+            # return
         if(check_job_exists(resume_id, key, jobListingId) and duplicacy_override==False):
             update_queue(resume_id, jobListingId)
             logger.info("Job already applied to.")
             exit()
+            # return
 
         # Glassdoor login
         glassdoor_address, password = get_glassdoor_user_for_login(key)
@@ -361,6 +367,7 @@ async def controller(resume_id=None, jobListingId=None, run_count=0, duplicacy_o
             display.stop()
         logger.info("Task Finished")
         exit()
+        # return
     except KeyboardInterrupt:
         if(ipID != None):
             delete_ip_auth(ipID)
@@ -399,6 +406,8 @@ async def controller(resume_id=None, jobListingId=None, run_count=0, duplicacy_o
         # application_success = await run_airtop_automation(jobListingId, data['user_email'], data['email'], data['password'], data['first_name'], data['last_name'], resume)
 
         application_success, response = await run_airtop_automation(jobListingId, email, glassdoor_address, password, name.get("first"), name.get("last"), resume)
+
+        print(f"application_success: {application_success}, response: {response}")
 
         if application_success:
             logger.info(f"Application submitted successfully via Airtop for jobListingId: {jobListingId}")

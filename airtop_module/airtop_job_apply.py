@@ -332,7 +332,8 @@ nest_asyncio.apply()
 # ---------------------- Configuration and Constants ----------------------
 RESUME_API = 'http://ec2-3-18-99-76.us-east-2.compute.amazonaws.com/api/build-resume'
 RESUME_PATH = "resume.pdf"
-TS_SCRIPT_PATH = os.path.join(os.getcwd(), "airtop_module/resume_upload.ts")
+# TS_SCRIPT_PATH = os.path.join(os.getcwd(), "airtop_module/resume_upload.ts")
+TS_SCRIPT_PATH = os.path.join(os.getcwd(), "airtop_module\\resume_upload.ts")
 AIRTOP_API_KEY = os.getenv("airtop_key", "6e7b2f5ff7f57523.dSrLf2UTxQImFch3qBiK71Eo1FTXQtqw99hQymCcDg")
 
 # ---------------------- MongoDB and Resume Utility ----------------------
@@ -411,12 +412,13 @@ def generate_resume(skills, file_path, email):
         print(error_message)
         raise RuntimeError(error_message)
 
-def upload_resume_subprocess(session_id, window_id):
+def upload_resume_subprocess(session_id, window_id, RESUME_PATH):
     env = os.environ.copy() 
     env.update({
         "AIRTOP_SESSION_ID": session_id,
         "AIRTOP_WINDOW_ID": window_id,
-        "AIRTOP_API_KEY": AIRTOP_API_KEY
+        "AIRTOP_API_KEY": AIRTOP_API_KEY,
+        "RESUME_FILE_PATH": RESUME_PATH
     })
 
     npx_path = which("npx")
@@ -424,6 +426,7 @@ def upload_resume_subprocess(session_id, window_id):
         raise EnvironmentError("❌ Could not find 'npx'. Ensure Node.js is installed.")
 
     print("🚀 Launching TS upload subprocess...")
+    print(f"Parameters for subprocess: session - {session_id}, window - {window_id}, npx_path- {npx_path}, script- {TS_SCRIPT_PATH}, resume - {RESUME_PATH}")
     try:
         result = subprocess.run(
             [npx_path, "ts-node", TS_SCRIPT_PATH],
@@ -431,7 +434,8 @@ def upload_resume_subprocess(session_id, window_id):
             capture_output=True,
             text=True,
             env=env,
-            timeout=20
+            timeout=20,
+            encoding="utf-8"  # 💡 THIS FIXES UnicodeDecodeError
         )
         print("🔁 TS Output:\n" + result.stdout)
         if result.stderr:
@@ -459,6 +463,8 @@ class JobApplicationAutomation:
 
         if not success:
             return (False, "Resume Generation Failure")
+
+        RESUME_PATH = os.path.join(os.getcwd(), file_name)
 
         session_id = None
         try:
@@ -854,7 +860,7 @@ class JobApplicationAutomation:
  
                 await asyncio.sleep(4)
  
-            await asyncio.to_thread(upload_resume_subprocess, session_id, window_id)
+            await asyncio.to_thread(upload_resume_subprocess, session_id, window_id, RESUME_PATH)
  
             await asyncio.sleep(4)
             await self.client.windows.click(
