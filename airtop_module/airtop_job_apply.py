@@ -458,7 +458,7 @@ class JobApplicationAutomation:
         success = generate_resume(user_data["skills"], os.path.join(os.getcwd(), file_name), user_data['user_email'])
 
         if not success:
-            return False, "Resume Generation Failure"
+            return (False, "Resume Generation Failure")
 
         session_id = None
         try:
@@ -543,7 +543,7 @@ class JobApplicationAutomation:
             print(f"Apply on employer site button?: {employer_site}")
  
             if employer_site.data.model_response == 'Y':
-                return False, "Employer Site URL"
+                return (False, "Employer Site URL")
  
             # await self.client.windows.click(
             #     session_id=session_id,
@@ -654,7 +654,7 @@ class JobApplicationAutomation:
                         await asyncio.sleep(10)
                         continue
                     else:
-                        return False, "New URL Not Detected"
+                        return (False, "New URL Not Detected")
 
                     # If no new tab, maybe same tab redirected
                     # current_url = driver.current_url
@@ -713,7 +713,8 @@ class JobApplicationAutomation:
                 if user_data['resume'].get("personal_details").get("contact").get("phone"):
                     phone  = user_data['resume'].get("personal_details").get("contact").get("phone")
                 else:
-                    phone = '212-456-7890'
+                    phone = ""
+                    # phone = '212-456-7890'
  
                 print(f"code: {phone_code}, phone: {phone}")
  
@@ -794,7 +795,7 @@ class JobApplicationAutomation:
             print(f"Invalid Phone Number? {correct_phone}")
  
             if correct_phone.data.model_response == 'Y':
-                return False, "Invalid Phone Number"
+                return (False, "Invalid Phone Number")
            
             await asyncio.sleep(4)
  
@@ -816,7 +817,7 @@ class JobApplicationAutomation:
                 print(f"Verification Code: {code}")
 
                 if not code:
-                    return False, "Verification code is None"
+                    return (False, "Verification code is None")
                 await asyncio.sleep(5)
  
                 # Try to enter the full code in one field
@@ -954,29 +955,29 @@ class JobApplicationAutomation:
                 completed = True
                 # return True
             else:
-                return False, "Final Submission Pending"
+                return (False, "Final Submission Pending")
             # -------------------- Questions based on the Resume --------------------
 
             # await parse_and_answer_all_questions_airtop(self.client, session, window, "")
 
         except ApiError as e:
             print(f"❌ API Error: {e.status_code} - {e.body}")
-            return False, f"API Error: {e.status_code} - {e.body}"
+            return (False, f"API Error: {e.status_code} - {e.body}")
         except Exception as e:
             print(f"❌ Unexpected Error: {str(e)}")
-            return False, f"Unexpected Error: {str(e)}"
+            return (False, f"Unexpected Error: {str(e)}")
         finally:
             if session_id:
                 await self.client.sessions.terminate(session_id)
                 print("🔚 Session terminated.")
-            return completed
+            return (completed, "")
 
 async def run_airtop_automation(joblisting_id, user_email, email, password, first_name, last_name, resume):
     automation = JobApplicationAutomation()
     
     data = {
-        # "jobLink" : fetch_job_link_by_id(joblisting_id),
-        "jobLink" : "https://www.glassdoor.co.in/job-listing/medicaid-claims-analyst-aston-carter-JV_KO0,23_KE24,36.htm?jl=1009775431938&src=GD_JOB_AD&ao=1110586&jrtk=5-yul1-0-1ithbn5tvjn36800-2c0d9f8572bf0527---6NYlbfkN0ChYVx_I3yfZ_JDY3EFoivtqvi_stwnZ_kRt8Dowt_l_T08GzZ4dLfgqREKn0Au9KYbuF1A35levFasuhGfbo505S7hznP6pnfeWzrTqZEEmSuqOGfb2AxRyxRerMLgLAUqPhKRtTzmOCb4U7H9xGS9gbYotSJ45ozk_hYLz7s-x0mlb_8UDRrykQ5z4QwhR5V5IGQgi7PKbscIsceXJ-KJeWbPrzPIxautvkP85-hFVQRD_nuifTn1hixu7DXa8pxgkPnHv9p3_XpcVjpPeKM7lLihINWLwX4r9ykGgdlcI57tbVWZLNG5eI0YK1iarLQlaYEFDxu9jGeWko7aUCTu_j-dE8xd6v0zD97RpoTWNVzLT4Vsm3RARiBmYjssFpDSUBz4jl3cREEh48Acz8y89S-_KhvtJu-ZmPslkNlD8bmR8_hXtD4Zx3TjM_h2c22hnvrpB3Gt3paLq3215Zw_MWvfiQUKknHlQYeRnCOSjMAgH27XPcky3ycSt7b6PYWHcDC3h9dv01vbd8hTetpBdOcmj0gdQskBCBtAwzAWes_ai4aU7jtk--KJsfua0yXTwd__vQUncytFiYOHxS9QzD3N_PU0C2ch9teFjxYxaHSf3m9HHO7C68pLWril7pshwLTLEUzy7RYYGJo4zJZkyBMSpBkVCfzAWn1fU79d5PJB9zInBKL42O7_VAOk1KQG4bxRQsc4CPALSX6S5CdTb6oi9rGvtcouVxHY3Uieb2QSoZczEPSj1FET4JxoDqHrOvIsjk0TQofNhER4_sc7Tk4l9qxdN9UK84cxSE3Q5359NxSVTew7x_DvwgUo_QWUID_giNGdVTq23JwdowYvXk80nvMlowLX6ULHaAL6rDevH-yQ2kDMxHNYNiCbvOhxuAMwM_2WYQZi2F3fX8gMItNv4MhasFBsneyVrayUTTFumVvtGXsNlwTnjfbTxT8kOqt1eu86B3N7qUk8ylPvbeEyC9jeFKBRWE6kvtiUgaxisqAWHVE5iHG_2iSbt3kDt6qjMuOfNQ8g7uOO21gsGRokKt4rWj417Yvoh9aTLJKvTre6iylc2jE5jrx_DiBwghXsrUt5Sv9qNZo5rO6vOUY7iyYwNV_WRwJhPWhLtFZldvY_Q93j1J_-F_O_CjybVXwjvO9GLCbKT4TsVtX_WRCH1_2u7S7XZZy3Yyz7QNxaYVSQIaxw9TjVCbPLohboN3bfNLzAvXkMT91LcBcS6Jx7QtCVQSVx5H7DAtpkFQ%253D%253D&cs=1_eb987dca&s=58&t=SR&pos=114&cpc=3BA4CE39D5B5DEF5&guid=0000019762bb9771baae64f109910230&jobListingId=1009775431938&ea=1&vt=w&cb=1749708151507&ctt=1749729276401",
+        "jobLink" : fetch_job_link_by_id(joblisting_id),
+        # "jobLink" : "https://www.glassdoor.co.in/job-listing/medicaid-claims-analyst-aston-carter-JV_KO0,23_KE24,36.htm?jl=1009775431938&src=GD_JOB_AD&ao=1110586&jrtk=5-yul1-0-1ithbn5tvjn36800-2c0d9f8572bf0527---6NYlbfkN0ChYVx_I3yfZ_JDY3EFoivtqvi_stwnZ_kRt8Dowt_l_T08GzZ4dLfgqREKn0Au9KYbuF1A35levFasuhGfbo505S7hznP6pnfeWzrTqZEEmSuqOGfb2AxRyxRerMLgLAUqPhKRtTzmOCb4U7H9xGS9gbYotSJ45ozk_hYLz7s-x0mlb_8UDRrykQ5z4QwhR5V5IGQgi7PKbscIsceXJ-KJeWbPrzPIxautvkP85-hFVQRD_nuifTn1hixu7DXa8pxgkPnHv9p3_XpcVjpPeKM7lLihINWLwX4r9ykGgdlcI57tbVWZLNG5eI0YK1iarLQlaYEFDxu9jGeWko7aUCTu_j-dE8xd6v0zD97RpoTWNVzLT4Vsm3RARiBmYjssFpDSUBz4jl3cREEh48Acz8y89S-_KhvtJu-ZmPslkNlD8bmR8_hXtD4Zx3TjM_h2c22hnvrpB3Gt3paLq3215Zw_MWvfiQUKknHlQYeRnCOSjMAgH27XPcky3ycSt7b6PYWHcDC3h9dv01vbd8hTetpBdOcmj0gdQskBCBtAwzAWes_ai4aU7jtk--KJsfua0yXTwd__vQUncytFiYOHxS9QzD3N_PU0C2ch9teFjxYxaHSf3m9HHO7C68pLWril7pshwLTLEUzy7RYYGJo4zJZkyBMSpBkVCfzAWn1fU79d5PJB9zInBKL42O7_VAOk1KQG4bxRQsc4CPALSX6S5CdTb6oi9rGvtcouVxHY3Uieb2QSoZczEPSj1FET4JxoDqHrOvIsjk0TQofNhER4_sc7Tk4l9qxdN9UK84cxSE3Q5359NxSVTew7x_DvwgUo_QWUID_giNGdVTq23JwdowYvXk80nvMlowLX6ULHaAL6rDevH-yQ2kDMxHNYNiCbvOhxuAMwM_2WYQZi2F3fX8gMItNv4MhasFBsneyVrayUTTFumVvtGXsNlwTnjfbTxT8kOqt1eu86B3N7qUk8ylPvbeEyC9jeFKBRWE6kvtiUgaxisqAWHVE5iHG_2iSbt3kDt6qjMuOfNQ8g7uOO21gsGRokKt4rWj417Yvoh9aTLJKvTre6iylc2jE5jrx_DiBwghXsrUt5Sv9qNZo5rO6vOUY7iyYwNV_WRwJhPWhLtFZldvY_Q93j1J_-F_O_CjybVXwjvO9GLCbKT4TsVtX_WRCH1_2u7S7XZZy3Yyz7QNxaYVSQIaxw9TjVCbPLohboN3bfNLzAvXkMT91LcBcS6Jx7QtCVQSVx5H7DAtpkFQ%253D%253D&cs=1_eb987dca&s=58&t=SR&pos=114&cpc=3BA4CE39D5B5DEF5&guid=0000019762bb9771baae64f109910230&jobListingId=1009775431938&ea=1&vt=w&cb=1749708151507&ctt=1749729276401",
         # "jobLink" : "https://www.glassdoor.co.in/job-listing/medicaid-claims-analyst-aston-carter-JV_KO0,23_KE24,36.htm?jl=1009775431938&src=GD_JOB_AD&ao=1110586&jrtk=5-yul1-0-1ithbn5tvjn36800-2c0d9f8572bf0527---6NYlbfkN0ChYVx_I3yfZ_JDY3EFoivtqvi_stwnZ_kRt8Dowt_l_T08GzZ4dLfgqREKn0Au9KYbuF1A35levFasuhGfbo505S7hznP6pnfeWzrTqZEEmSuqOGfb2AxRyxRerMLgLAUqPhKRtTzmOCb4U7H9xGS9gbYotSJ45ozk_hYLz7s-x0mlb_8UDRrykQ5z4QwhR5V5IGQgi7PKbscIsceXJ-KJeWbPrzPIxautvkP85-hFVQRD_nuifTn1hixu7DXa8pxgkPnHv9p3_XpcVjpPeKM7lLihINWLwX4r9ykGgdlcI57tbVWZLNG5eI0YK1iarLQlaYEFDxu9jGeWko7aUCTu_j-dE8xd6v0zD97RpoTWNVzLT4Vsm3RARiBmYjssFpDSUBz4jl3cREEh48Acz8y89S-_KhvtJu-ZmPslkNlD8bmR8_hXtD4Zx3TjM_h2c22hnvrpB3Gt3paLq3215Zw_MWvfiQUKknHlQYeRnCOSjMAgH27XPcky3ycSt7b6PYWHcDC3h9dv01vbd8hTetpBdOcmj0gdQskBCBtAwzAWes_ai4aU7jtk--KJsfua0yXTwd__vQUncytFiYOHxS9QzD3N_PU0C2ch9teFjxYxaHSf3m9HHO7C68pLWril7pshwLTLEUzy7RYYGJo4zJZkyBMSpBkVCfzAWn1fU79d5PJB9zInBKL42O7_VAOk1KQG4bxRQsc4CPALSX6S5CdTb6oi9rGvtcouVxHY3Uieb2QSoZczEPSj1FET4JxoDqHrOvIsjk0TQofNhER4_sc7Tk4l9qxdN9UK84cxSE3Q5359NxSVTew7x_DvwgUo_QWUID_giNGdVTq23JwdowYvXk80nvMlowLX6ULHaAL6rDevH-yQ2kDMxHNYNiCbvOhxuAMwM_2WYQZi2F3fX8gMItNv4MhasFBsneyVrayUTTFumVvtGXsNlwTnjfbTxT8kOqt1eu86B3N7qUk8ylPvbeEyC9jeFKBRWE6kvtiUgaxisqAWHVE5iHG_2iSbt3kDt6qjMuOfNQ8g7uOO21gsGRokKt4rWj417Yvoh9aTLJKvTre6iylc2jE5jrx_DiBwghXsrUt5Sv9qNZo5rO6vOUY7iyYwNV_WRwJhPWhLtFZldvY_Q93j1J_-F_O_CjybVXwjvO9GLCbKT4TsVtX_WRCH1_2u7S7XZZy3Yyz7QNxaYVSQIaxw9TjVCbPLohboN3bfNLzAvXkMT91LcBcS6Jx7QtCVQSVx5H7DAtpkFQ%253D%253D&cs=1_eb987dca&s=58&t=SR&pos=114&cpc=3BA4CE39D5B5DEF5&guid=0000019762bb9771baae64f109910230&jobListingId=1009775431938&ea=1&vt=w&cb=1749708151507&ctt=1749724666940",
         "user_email" : user_email,
         "email" : email,
