@@ -1,0 +1,22 @@
+{
+  "dependencies": {
+    "@airtop/sdk": "^0.1.43",
+    "axios": "^1.9.0",
+    "mongodb": "^6.17.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "name": "airtop-ai",
+  "version": "1.0.0",
+  "description": "",
+  "main": "resume_upload.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
