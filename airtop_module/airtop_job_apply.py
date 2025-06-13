@@ -34,7 +34,7 @@ from Utils.database_queries import fetch_resume_data
 from airtop_module.Utils.form_filler import *
 from functools import wraps
 from airtop_module.Utils.handle_pop_ups import *
-
+from airtop_module.Utils.verification_code import *
 
 
 def timeout_handler(timeout_seconds):
@@ -458,7 +458,7 @@ class JobApplicationAutomation:
         success = generate_resume(user_data["skills"], os.path.join(os.getcwd(), file_name), user_data['user_email'])
 
         if not success:
-            return False
+            return False, "Resume Generation Failure"
 
         session_id = None
         try:
@@ -534,16 +534,34 @@ class JobApplicationAutomation:
 
             # -------------------- 👇 Login + Easy Apply Flow --------------------
 
+            employer_site = await self.client.windows.page_query(
+                session_id=session_id,
+                window_id=window_id,
+                prompt="Do you see a Button or heading on the page that says 'Apply on employer site?' Answer only Y/N."
+            )
+ 
+            print(f"Apply on employer site button?: {employer_site}")
+ 
+            if employer_site.data.model_response == 'Y':
+                return False, "Employer Site URL"
+ 
+            # await self.client.windows.click(
+            #     session_id=session_id,
+            #     window_id=window_id,
+            #     element_description='button or link with text "Sign In"',
+            # )
+            # print("✅ Clicked on 'Sign In' button")
+            # await asyncio.sleep(2)
+ 
+            # Click the Easy Apply button
             await self.client.windows.click(
                 session_id=session_id,
                 window_id=window_id,
-                element_description='button or link with text "Sign In"',
+                element_description="A button element with class button_Button__MlD2g and data-test='easyApply', nested inside a container with class JobDetails_applyButtonContainer__L36Bs. It contains a unique SVG lightning bolt icon and text 'Easy Apply', indicating a special one-click job application action."
             )
-            print("✅ Clicked on 'Sign In' button")
-            await asyncio.sleep(2)
-
-            # inject_new_tab_blocker(browser)
-            # setup_persistent_blocking(browser)
+            print("✅ Clicked on Easy Apply")
+ 
+            await asyncio.sleep(5)
 
             await self.client.windows.type(
                 session_id=session_id,
@@ -573,17 +591,7 @@ class JobApplicationAutomation:
 
             print("✅ Logged into Glassdoor.")
 
-            await handle_popups(self.client, session_id, window_id, user_data["email"])
-
-            # Click the Easy Apply button
-            await self.client.windows.click(
-                session_id=session_id,
-                window_id=window_id,
-                element_description="A button element with class button_Button__MlD2g and data-test='easyApply', nested inside a container with class JobDetails_applyButtonContainer__L36Bs. It contains a unique SVG lightning bolt icon and text 'Easy Apply', indicating a special one-click job application action."
-            )
-            print("✅ Clicked on Easy Apply")
-
-            await asyncio.sleep(15)
+            # await handle_popups(self.client, session_id, window_id, user_data["email"])
 
             # intercepted_urls = get_intercepted_urls(browser)
             # print("📋 Intercepted URLs:", intercepted_urls)
@@ -600,38 +608,68 @@ class JobApplicationAutomation:
 
             # await asyncio.sleep(5)  # Wait for redirection or new tab
 
+            await asyncio.sleep(15)
+
             # Detect new tab and fetch URL
-            current_tabs = driver.window_handles
-            if len(current_tabs) > len(original_tabs):
-                new_tab = list(set(current_tabs) - set(original_tabs))[0]
-                driver.switch_to.window(new_tab)
-                new_url = driver.current_url
-                print(f"🌐 Redirected to new tab: {new_url}")
 
-                # 🔍 Extract windowId from the URL
-                match = re.search(r"windowId=([a-f0-9\-]+)", new_url)
-                if match:
-                    window_id = match.group(1)
-                    print(f"✅ Extracted new Airtop window_id: {window_id}")
+            retry = 3
+
+            while retry:
+
+                current_tabs = driver.window_handles
+
+                if len(current_tabs) > len(original_tabs):
+                    new_tab = list(set(current_tabs) - set(original_tabs))[0]
+                    driver.switch_to.window(new_tab)
+                    new_url = driver.current_url
+                    print(f"🌐 Redirected to new tab: {new_url}")
+
+                    # 🔍 Extract windowId from the URL
+                    match = re.search(r"windowId=([a-f0-9\-]+)", new_url)
+                    if match:
+                        window_id = match.group(1)
+                        print(f"✅ Extracted new Airtop window_id: {window_id}")
+                        break
+                    else:
+                        print("⚠️ No windowId found in the redirected URL.")
+                        retry -= 1
+                        
                 else:
-                    print("⚠️ No windowId found in the redirected URL.")
-                    
-            else:
-                # If no new tab, maybe same tab redirected
-                current_url = driver.current_url
-                print(f"🔁 Same tab redirect URL: {current_url}")
 
-                # Attempt extraction from same-tab URL too
-                match = re.search(r"windowId=([a-f0-9\-]+)", current_url)
-                if match:
-                    window_id = match.group(1)
-                    print(f"✅ Extracted window_id from same tab: {window_id}")
+                    new_url = driver.current_url
+                    print(f"🌐 Current Tab URL: {new_url}")
+
+                    if new_url != live_view_url:
+                        # 🔍 Extract windowId from the URL
+                        match = re.search(r"windowId=([a-f0-9\-]+)", new_url)
+                        if match:
+                            window_id = match.group(1)
+                            print(f"✅ Extracted new Airtop window_id: {window_id}")
+                            break
+                        else:
+                            print("⚠️ No New windowId found in the URL.")
+
+                    retry -= 1
+                    if retry:
+                        await asyncio.sleep(10)
+                        continue
+                    else:
+                        return False, "New URL Not Detected"
+
+                    # If no new tab, maybe same tab redirected
+                    # current_url = driver.current_url
+                    # print(f"🔁 Same tab redirect URL: {current_url}")
+
+                    # # Attempt extraction from same-tab URL too
+                    # match = re.search(r"windowId=([a-f0-9\-]+)", current_url)
+                    # if match:
+                    #     window_id = match.group(1)
+                    #     print(f"✅ Extracted window_id from same tab: {window_id}")
 
             print(f"New Tab Window Id: {window_id}")
 
-
             # -------------------- Job Application Filling --------------------
-
+ 
             # Fill in First Name
             await self.client.windows.type(
                 session_id=session_id,
@@ -640,9 +678,9 @@ class JobApplicationAutomation:
                 text=user_data["first_name"]
             )
             print("✅ Entered First Name")
-    
+   
             await asyncio.sleep(4)
-    
+   
             # Fill in Last Name
             await self.client.windows.type(
                 session_id=session_id,
@@ -651,52 +689,52 @@ class JobApplicationAutomation:
                 text=user_data["last_name"]
             )
             print("✅ Entered Last Name")
-
+ 
             await asyncio.sleep(4)
-
+ 
             available_phone = await self.client.windows.page_query(
                 session_id=session_id,
                 window_id=window_id,
                 prompt= "Do you see a text 'Phone number'  on the page? Answer only Y/N."
                 # prompt="Do you see a label[for='input-phoneNumber'] or span[class='dd-privacy-allow css-bev4h3 e37uo190'] on the page? Answer only Y/N."
             )
-
-            print(f"Phone Number Field Availabel? {available_phone}")   
-
+ 
+            print(f"Phone Number Field Availabel? {available_phone}")  
+ 
             await asyncio.sleep(2)
-
+ 
             if available_phone.data.model_response == 'Y' :
-
+ 
                 if user_data['resume'].get("personal_details").get("contact").get("phone_number_country"):
                     phone_code = user_data['resume'].get("personal_details").get("contact").get("phone_number_country")
                 else:
                     phone_code = 'United States'
-
+ 
                 if user_data['resume'].get("personal_details").get("contact").get("phone"):
                     phone  = user_data['resume'].get("personal_details").get("contact").get("phone")
                 else:
                     phone = '212-456-7890'
-
+ 
                 print(f"code: {phone_code}, phone: {phone}")
-
+ 
                 await self.client.windows.type(
                     session_id=session.data.id,
                     window_id=window.data.window_id,
                     element_description=f"Select Field with aria-label='Phone number country' for 'Phone number'",
                     # "Select Field with aria-label='Phone number country' for '{json_obj["name"]}'
                     text=phone_code[0], # json_obj["response"][0]
-                    )
-
+                )
+ 
                 await asyncio.sleep(5)
-
+ 
                 await self.client.windows.click(
                     session_id = session.data.id,
                     window_id=window.data.window_id,
                     element_description=f"Option Field for label='{phone_code}'" # Option Field for label='json_obj["response"]'
                 )
-            
+           
                 await asyncio.sleep(5)
-
+ 
                 # For Entering Phone Number
                 await self.client.windows.type(
                     session_id=session.data.id,
@@ -704,12 +742,38 @@ class JobApplicationAutomation:
                     element_description=f"Input Field of type='tel' for 'Phone Number'",
                     # Input Field of type='tel' for '{json_obj["name"]}'
                     text=phone, # json_obj["response"]
-                    )
-    
-                print("✅ Entered Phone NUmber")
-    
+                )
+   
+                print("✅ Entered Phone Number")
+   
                 await asyncio.sleep(4)
-    
+ 
+            available_email = await self.client.windows.page_query(
+                session_id=session_id,
+                window_id=window_id,
+                prompt = "Do you see an input field for 'email' on the page? Answer only Y/N."
+                # prompt= "Do you see a input[id='input-email'] or any field for the email on the page? Answer only Y/N."
+                # prompt="Do you see a label[for='input-phoneNumber'] or span[class='dd-privacy-allow css-bev4h3 e37uo190'] on the page? Answer only Y/N."
+            )
+
+            print(f"available email: {available_email}")
+ 
+            await asyncio.sleep(2)
+ 
+            if available_email.data.model_response == 'Y' :
+                # For Entering Email
+                await self.client.windows.type(
+                    session_id=session.data.id,
+                    window_id=window.data.window_id,
+                    element_description=f"Input Field of type='email' for 'Email'",
+                    # Input Field of type='tel' for '{json_obj["name"]}'
+                    text=user_data["email"], # json_obj["response"]
+                )
+   
+                print("✅ Entered Email")
+   
+                await asyncio.sleep(4)
+   
             # Click "Continue" on the job listing
             await self.client.windows.click(
                 session_id=session_id,
@@ -717,22 +781,62 @@ class JobApplicationAutomation:
                 element_description="button:has-text('Continue')"
             )
             print("✅ Clicked on Continue")
-    
+   
             await asyncio.sleep(4)
-
+ 
+            verification_section = await self.client.windows.page_query(
+                    session_id=session_id,
+                    window_id=window_id,
+                    prompt="Do you see a heading like 'Verify your email' or a text saying 'Enter verification code'? Answer only Y/N."
+            )
+           
+            await asyncio.sleep(2)
+ 
+            print(f"Verifying Email")
+ 
+            if verification_section.data.model_response == 'Y':
+ 
+                # Split the code into digits
+                code = await get_verification_code(target_email=user_data["email"])
+                print(f"Verification Code: {code}")
+                await asyncio.sleep(5)
+ 
+                # Try to enter the full code in one field
+                await self.client.windows.type(
+                    session_id=session_id,
+                    window_id=window_id,
+                    element_description="input[type='number],input[id='input-passcode']",
+                    text=code
+                )
+ 
+                print("✅ Entered Verification Code")
+ 
+                # Optional: Small wait before clicking
+                await asyncio.sleep(4)
+ 
+                # Click the "Verify" button
+                await self.client.windows.click(
+                    session_id=session_id,
+                    window_id=window_id,
+                    element_description="button[data-testid='continue-button'] with text 'Verify'"
+                )
+ 
+                print("✅ Clicked on Verify")
+ 
+                await asyncio.sleep(4)
+ 
             await asyncio.to_thread(upload_resume_subprocess, session_id, window_id)
-
+ 
             await asyncio.sleep(4)
             await self.client.windows.click(
                 session_id=session_id,
                 window_id=window_id,
                 element_description="button:has-text('Continue')"
             )
-
+ 
             await asyncio.sleep(5)
-
+ 
             print("✅ Clicked on Continue\n🎉 Resume submitted!")
-
 
             # -------------------- Questions based on the Resume --------------------
     
@@ -815,7 +919,7 @@ class JobApplicationAutomation:
                 )
                 print("✅ Clicked on Submit")
 
-            await asyncio.sleep(10)
+            await asyncio.sleep(15)
 
             print("🎉 Job application completed successfully!")
 
@@ -832,17 +936,17 @@ class JobApplicationAutomation:
                 completed = True
                 # return True
             else:
-                return False
+                return False, "Final Submission Pending"
             # -------------------- Questions based on the Resume --------------------
 
             # await parse_and_answer_all_questions_airtop(self.client, session, window, "")
 
         except ApiError as e:
             print(f"❌ API Error: {e.status_code} - {e.body}")
-            return False
+            return False, f"API Error: {e.status_code} - {e.body}"
         except Exception as e:
             print(f"❌ Unexpected Error: {str(e)}")
-            return False
+            return False, f"Unexpected Error: {str(e)}"
         finally:
             if session_id:
                 await self.client.sessions.terminate(session_id)

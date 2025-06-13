@@ -1,6 +1,6 @@
 import asyncio
 
-from airtop_module.Utils.verification_code import get_verification_code
+from airtop_module.Utils.verification_code1 import get_verification_code
 
 async def handle_popups(client, session_id, window_id, email):
     print("🔍 Checking for popups...")
@@ -76,17 +76,9 @@ async def handle_popups(client, session_id, window_id, email):
                             window_id=window_id,
                             text="Stanford University",
                             element_description='input[data-test="university-autocomplete"]',
-                            # press_enter_key=True
+                            press_enter_key=True
                             # time_threshold_seconds = 3
                             # timeout=3000
-                        )
-
-                        await asyncio.sleep(2)
-
-                        await client.windows.click(
-                            session_id=session_id,
-                            window_id=window_id,
-                            element_description='option with label="Standford University',
                         )
                         print(f"✅ Entered University")
 
@@ -107,17 +99,9 @@ async def handle_popups(client, session_id, window_id, email):
                             window_id=window_id,
                             text="Bachelor's",
                             element_description='Button for current degree type',
-                            # press_enter_key=True
+                            press_enter_key=True
                             # time_threshold_seconds = 3
                             # timeout=3000
-                        )
-
-                        await asyncio.sleep(2)
-
-                        await client.windows.click(
-                            session_id=session_id,
-                            window_id=window_id,
-                            element_description="option with label=Bachelor's",
                         )
                         print(f"✅ Entered Current Degree")
 
@@ -142,15 +126,7 @@ async def handle_popups(client, session_id, window_id, email):
                             window_id=window_id,
                             element_description="input element with [data-test='job-title-autocomplete']",
                             text="Software Engineer",
-                            # press_enter_key=True
-                        )
-
-                        await asyncio.sleep(2)
-
-                        await client.windows.click(
-                            session_id=session_id,
-                            window_id=window_id,
-                            element_description="Option field with label='Software Engineer'",
+                            press_enter_key=True
                         )
                         print("✅ Entered Job Title")
 
@@ -162,19 +138,11 @@ async def handle_popups(client, session_id, window_id, email):
                             window_id=window_id,
                             element_description="input element with [data-test='location-autocomplete']",
                             text="Surat",
-                            # press_enter_key=True
-                        )
-
-                        await asyncio.sleep(2)
-
-                        await client.windows.click(
-                            session_id=session_id,
-                            window_id=window_id,
-                            element_description="Option field with label='Surat'",
+                            press_enter_key=True
                         )
                         print("✅ Typed Location")
 
-                        await asyncio.sleep(4)
+                        await asyncio.sleep(4)  # Give time for suggestions to appear
 
                         await client.windows.click(
                             session_id=session_id,
@@ -205,35 +173,6 @@ async def handle_popups(client, session_id, window_id, email):
                             text="Other",
                             press_enter_key=True
                         )
-
-                        await asyncio.sleep(2)
-
-                        other = await client.windows.page_query(
-                            session_id=session_id,
-                            window_id=window_id,
-                            prompt="Do you see a text or label on the page that contains 'Other'? Answer only Y/N."
-                        )
-
-                        await asyncio.sleep(2)
-
-                        while other.data.model_response == 'N':
-                            await client.windows.type(
-                                session_id=session_id,
-                                window_id=window_id,
-                                element_description='button[data-test="industry-select-button"]',
-                                text="Other",
-                                press_enter_key=True
-                            )
-
-                            await asyncio.sleep(2)
-
-                            other = await client.windows.page_query(
-                                session_id=session_id,
-                                window_id=window_id,
-                                prompt="Do you see a text or label on the page that contains 'Other'? Answer only Y/N."
-                            )
-
-                            await asyncio.sleep(2)
                        
                         print("✅ Selected 'Other' from dropdown")
 
@@ -262,8 +201,6 @@ async def handle_popups(client, session_id, window_id, email):
                         # Split the code into digits
                         code = await get_verification_code(target_email=email)
                         await asyncio.sleep(5)
-
-                        print(f"Verification Code: {code}")
 
                         # Try to enter the full code in one field
                         await client.windows.click(

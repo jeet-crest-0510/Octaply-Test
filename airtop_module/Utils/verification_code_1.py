@@ -37,7 +37,6 @@ async def get_verification_code(target_email: str) -> str | None:
         return None
 
     items = response.json().get("items", [])
-    print(items)
     if not items:
         return None
 
@@ -46,16 +45,6 @@ async def get_verification_code(target_email: str) -> str | None:
         recipient = raw_recipient.replace("<", "").replace(">", "").strip().lower()
         if recipient != target_email.strip().lower():
             continue
-        
-        subject = item.get("message", {}).get("headers", {}).get("subject", "")
-        print(f'Subject: {subject}')
-
-        if not subject:
-            continue
-
-        if 'Glassdoor' in subject:
-            return subject[-5:]
-
 
         storage_url = item.get("storage", {}).get("url")
         if not storage_url:

@@ -60,12 +60,12 @@ def insert_failed_job(data: dict, client):
         logger.error(f"Error inserting failed job to database: {e}")
 
 # Function to log failed job applications to MongoDB
-def log_failed_job_to_db(resume_id, jobListingId, client, retry_count=0):
+def log_failed_job_to_db(resume_id, jobListingId, client, reason = '', retry_count=0):
     try:
         failed_job_data = {
             "resume_id": ObjectId(resume_id),
             "job_listing_id": jobListingId,
-            "failure_reason": "Airtop Failure",
+            "failure_reason": f'Airtop Failure - {reason}',
             "failure_timestamp": datetime.utcnow(),
             "retry_count": retry_count,
             "last_retry_timestamp": None,
@@ -385,8 +385,8 @@ async def controller(resume_id=None, jobListingId=None, run_count=0, duplicacy_o
         # email = "ahdiuthayakumar@gmail.com"
         # glassdoor_address = "shanemurphy@octa-jobs.com"
         # password = "B0SGHIEv1gR7"
-        glassdoor_address = "wesiv22182@3dboxer.com"
-        password = "wesiv@2182"
+        # glassdoor_address = "wesiv22182@3dboxer.com"
+        # password = "wesiv@2182"
 
         # data = {
         #     "user_email" : "archish.p@crestinfosystems.com",
@@ -398,14 +398,14 @@ async def controller(resume_id=None, jobListingId=None, run_count=0, duplicacy_o
 
         # application_success = await run_airtop_automation(jobListingId, data['user_email'], data['email'], data['password'], data['first_name'], data['last_name'], resume)
 
-        application_success = await run_airtop_automation(jobListingId, email, glassdoor_address, password, name.get("first"), name.get("last"), resume)
+        application_success, response = await run_airtop_automation(jobListingId, email, glassdoor_address, password, name.get("first"), name.get("last"), resume)
 
         if application_success:
             logger.info(f"Application submitted successfully via Airtop for jobListingId: {jobListingId}")
             update_applications(resume_id, jobListingId)
         else:
             logger.info(f"Application failed via Airtop for jobListingId: {jobListingId}")
-            log_failed_job_to_db(resume_id, jobListingId, client)
+            log_failed_job_to_db(resume_id, jobListingId, client, response)
             logger.info("AirtopFailures Trigger published")
             update_queue(resume_id, jobListingId)
 
