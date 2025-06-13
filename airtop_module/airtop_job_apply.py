@@ -618,6 +618,7 @@ class JobApplicationAutomation:
 
                 current_tabs = driver.window_handles
 
+                # Handle New tab Redirection
                 if len(current_tabs) > len(original_tabs):
                     new_tab = list(set(current_tabs) - set(original_tabs))[0]
                     driver.switch_to.window(new_tab)
@@ -633,7 +634,14 @@ class JobApplicationAutomation:
                     else:
                         print("⚠️ No windowId found in the redirected URL.")
                         retry -= 1
+
+                        if retry:
+                            await asyncio.sleep(10)
+                            continue
+                        else:
+                            return (False, "New URL Not Detected")
                         
+                # Handle Same tab Redirection
                 else:
 
                     new_url = driver.current_url
@@ -667,6 +675,8 @@ class JobApplicationAutomation:
                     #     print(f"✅ Extracted window_id from same tab: {window_id}")
 
             print(f"New Tab Window Id: {window_id}")
+
+            await asyncio.sleep(15)
 
             # -------------------- Job Application Filling --------------------
  
