@@ -931,7 +931,7 @@ class JobApplicationAutomation:
             await asyncio.sleep(2)
 
             # Verify the email if exists
-            print(f"Verifying Email")
+            print(f"Verifying Email: {verification_section}")
  
             if verification_section.data.model_response == 'Y':
 
@@ -981,7 +981,7 @@ class JobApplicationAutomation:
                     )
     
                     await asyncio.sleep(2)
-                    print(f"Verification Retry: {verification_retry}")
+                    print(f"Verification Retries left {retry}: {verification_retry}")
     
                     if verification_retry.data.model_response == 'Y' :
 
@@ -1041,15 +1041,80 @@ class JobApplicationAutomation:
             await asyncio.sleep(4)
  
             await asyncio.to_thread(upload_resume_subprocess, session_id, window_id, RESUME_PATH)
+
+            print("✅ Resume Uploaded")
  
             await asyncio.sleep(4)
+ 
+            await self.client.windows.click(
+                session_id=session_id,
+                window_id=window_id,
+                element_description="label:for('file-resume-input')"
+            )
+            print("✅ Clicked on Resume")
+ 
+            await asyncio.sleep(4)
+ 
             await self.client.windows.click(
                 session_id=session_id,
                 window_id=window_id,
                 element_description="button:has-text('Continue')"
             )
+            print("✅ Clicked on Continue")
  
             await asyncio.sleep(5)
+ 
+            # Resume Retry
+            retry = 2
+ 
+            while retry:
+                resume_retry = await self.client.windows.page_query(
+                        session_id=session_id,
+                        window_id=window_id,
+                        prompt="Do you see a text 'Choose an option to continue' on the page? Answer only with Y/N"
+                )
+
+                print(f"resume retries left - {retry}: {resume_retry}")
+ 
+                await asyncio.sleep(2)
+ 
+                if resume_retry.data.model_response == 'Y' :
+                    await asyncio.to_thread(upload_resume_subprocess, session_id, window_id)
+                    print("✅ Resume Uploaded")
+       
+                    await asyncio.sleep(4)
+ 
+                    await self.client.windows.click(
+                        session_id=session_id,
+                        window_id=window_id,
+                        element_description="label:for('file-resume-input')"
+                    )
+                    print("✅ Clicked on Resume")
+ 
+                    await asyncio.sleep(4)
+ 
+                    await self.client.windows.click(
+                        session_id=session_id,
+                        window_id=window_id,
+                        element_description="button:has-text('Continue')"
+                    )
+                    print("✅ Clicked on Continue")
+       
+                    await asyncio.sleep(5)
+ 
+                    retry -= 1
+
+                else:
+                    break
+ 
+            resume_retry = await self.client.windows.page_query(
+                    session_id=session_id,
+                    window_id=window_id,
+                    prompt="Do you see a text 'Choose an option to continue' on the page? Answer only with Y/N"
+            )
+ 
+            if not retry and resume_retry.data.model_response == 'Y' :
+                return (False, "Resume can't be uploaded")
  
             print("✅ Clicked on Continue\n🎉 Resume submitted!")
 

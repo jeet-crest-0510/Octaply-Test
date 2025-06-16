@@ -95,7 +95,7 @@ async def parse_and_answer_all_questions_airtop(client, session, window, resume,
 
     await asyncio.sleep(4)
 
-    print(f"Response for Page Query: {response}")
+    print(f"Employer's Questions: {response}")
 
     # valid_labels = get_visible_field_labels(driver)
     # final_result = filter_airtop_fields(response, valid_labels)
@@ -110,6 +110,8 @@ async def parse_and_answer_all_questions_airtop(client, session, window, resume,
 
     answers = await get_response_from_prompt(json_format, resume)
     answers = json.loads(answers)
+
+    print(f"Generated Answers of the Questions: {answers}")
 
     for json_obj in answers["output"]:    # needs a proper prompt that can generate output containing all the fields
     # for json_obj in json_format["input"]:   # currently we are not getting all the fields in output so using input
