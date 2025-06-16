@@ -543,13 +543,17 @@ class JobApplicationAutomation:
             employer_site = await self.client.windows.page_query(
                 session_id=session_id,
                 window_id=window_id,
-                prompt="Do you see a Button or heading on the page that says 'Apply on employer site?' Answer only Y/N."
+                prompt = "If you see a Button or heading on the page that says 'Apply on employer site?' Answer with 'E'. If you see A Button or heading on the page  that contains text 'Easy Apply' or 'Sign in to apply', indicating a special one-click job application action, Answer with 'Y'. Else If you don't find anything as describe above, Answer with 'N'. Answer only with 'E/Y/N'"
+                # prompt="Do you see a Button or heading on the page that says 'Apply on employer site?' Answer only Y/N."
             )
  
-            print(f"Apply on employer site button?: {employer_site}")
+            print(f"Easy Apply button Available?: {employer_site}")
  
-            if employer_site.data.model_response == 'Y':
+            if employer_site.data.model_response == 'E':
                 return (False, "Employer Site URL")
+            
+            if employer_site.data.model_response == 'N':
+                return (False, "Easy Apply Button not available")
  
             # await self.client.windows.click(
             #     session_id=session_id,
@@ -557,7 +561,8 @@ class JobApplicationAutomation:
             #     element_description='button or link with text "Sign In"',
             # )
             # print("✅ Clicked on 'Sign In' button")
-            # await asyncio.sleep(2)
+
+            await asyncio.sleep(5)
  
             # Click the Easy Apply button
             await self.client.windows.click(
@@ -568,6 +573,41 @@ class JobApplicationAutomation:
             print("✅ Clicked on Easy Apply")
  
             await asyncio.sleep(5)
+
+            # Check For Email Field and if Exists, Enter the Email
+
+            email_check = await self.client.windows.page_query(
+                session_id=session_id,
+                window_id=window_id,
+                prompt = "Do you see an input field to enter email?. Answer only with 'Y/N'"
+                # prompt="Do you see a Button or heading on the page that says 'Apply on employer site?' Answer only Y/N."
+            )
+
+            print(f"email_check: {email_check}")
+            await asyncio.sleep(2)
+
+            retry = 5
+
+            while retry and email_check.data.model_response == 'N':
+                retry -= 1
+
+                await asyncio.sleep(5)
+
+                email_check = await self.client.windows.page_query(
+                    session_id=session_id,
+                    window_id=window_id,
+                    prompt = "Do you see an input field to enter email?. Answer only with 'Y/N'"
+                    # prompt="Do you see a Button or heading on the page that says 'Apply on employer site?' Answer only Y/N."
+                )
+                print(f"email_check retries left - {retry}: {email_check}")
+
+                if email_check.data.model_response == 'Y':
+                    break
+
+            if not retry and email_check.data.model_response == 'N':
+                return (False, "Email Field not found in Sign In")
+            
+            await asyncio.sleep(2)
 
             await self.client.windows.type(
                 session_id=session_id,
@@ -581,6 +621,41 @@ class JobApplicationAutomation:
 
             # inject_new_tab_blocker(browser)
             # setup_persistent_blocking(browser)
+
+            # Check for the Password Field and if Exists, Enter the password
+
+            password_check = await self.client.windows.page_query(
+                session_id=session_id,
+                window_id=window_id,
+                prompt = "Do you see a button with text 'Create account' or 'Sign in' on the page?. Answer only with 'Y/N'"
+                # prompt="Do you see a Button or heading on the page that says 'Apply on employer site?' Answer only Y/N."
+            )
+
+            print(f"password_check: {password_check}")
+            await asyncio.sleep(2)
+
+            retry = 5
+
+            while retry and password_check.data.model_response == 'N':
+                retry -= 1
+
+                await asyncio.sleep(5)
+
+                password_check = await self.client.windows.page_query(
+                    session_id=session_id,
+                    window_id=window_id,
+                    prompt = "Do you see a button with text 'Create account' or 'Sign in' on the page?. Answer only with 'Y/N'"
+                    # prompt="Do you see a Button or heading on the page that says 'Apply on employer site?' Answer only Y/N."
+                )
+                print(f"password_check retries left - {retry}: {password_check}")
+
+                if password_check.data.model_response == 'Y':
+                    break
+
+            if not retry and password_check.data.model_response == 'N':
+                return (False, "Password Field not found in Sign In")
+            
+            await asyncio.sleep(2)
 
             await self.client.windows.type(
                 session_id=session_id,
@@ -685,133 +760,165 @@ class JobApplicationAutomation:
             await asyncio.sleep(15)
 
             # -------------------- Job Application Filling --------------------
- 
-            # Fill in First Name
-            await self.client.windows.type(
+
+            # Check For First name, Last Name Field if Exists
+
+            first_name_check = await self.client.windows.page_query(
                 session_id=session_id,
                 window_id=window_id,
-                element_description="input[name='firstName']",
-                text=user_data["first_name"]
+                prompt = "Do you see a text or heading on the page for input[name='firstName']?. Answer only with 'Y/N'"
+                # prompt="Do you see a Button or heading on the page that says 'Apply on employer site?' Answer only Y/N."
             )
-            print("✅ Entered First Name")
-   
-            await asyncio.sleep(4)
-   
-            # Fill in Last Name
-            await self.client.windows.type(
-                session_id=session_id,
-                window_id=window_id,
-                element_description="input[name='lastName']",
-                text=user_data["last_name"]
-            )
-            print("✅ Entered Last Name")
- 
-            await asyncio.sleep(4)
- 
-            available_phone = await self.client.windows.page_query(
-                session_id=session_id,
-                window_id=window_id,
-                prompt= "Do you see a text 'Phone number'  on the page? Answer only Y/N."
-                # prompt="Do you see a label[for='input-phoneNumber'] or span[class='dd-privacy-allow css-bev4h3 e37uo190'] on the page? Answer only Y/N."
-            )
- 
-            print(f"Phone Number Field Availabel? {available_phone}")  
- 
+
+            print(f"first_name_check: {first_name_check}")
             await asyncio.sleep(2)
- 
-            if available_phone.data.model_response == 'Y' :
- 
-                if user_data['resume'].get("personal_details").get("contact").get("phone_number_country"):
-                    phone_code = user_data['resume'].get("personal_details").get("contact").get("phone_number_country")
-                else:
-                    phone_code = 'United States'
- 
-                if user_data['resume'].get("personal_details").get("contact").get("phone"):
-                    phone  = user_data['resume'].get("personal_details").get("contact").get("phone")
-                else:
-                    phone = ""
-                    # phone = '212-456-7890'
- 
-                print(f"code: {phone_code}, phone: {phone}")
- 
+
+            retry = 5
+
+            while retry and first_name_check.data.model_response == 'N':
+                retry -= 1
+
+                await asyncio.sleep(5)
+
+                first_name_check = await self.client.windows.page_query(
+                    session_id=session_id,
+                    window_id=window_id,
+                    prompt = "Do you see a text or heading on the page for input[name='firstName']?. Answer only with 'Y/N'"
+                    # prompt="Do you see a Button or heading on the page that says 'Apply on employer site?' Answer only Y/N."
+                )
+                print(f"first_name_check retries left - {retry}: {first_name_check}")
+
+                if first_name_check.data.model_response == 'Y':
+                    break
+
+            if first_name_check.data.model_response == 'Y':
+        
+                # Fill in First Name
                 await self.client.windows.type(
                     session_id=session_id,
                     window_id=window_id,
-                    element_description=f"Select Field with aria-label='Phone number country' for 'Phone number'",
-                    # "Select Field with aria-label='Phone number country' for '{json_obj["name"]}'
-                    text=phone_code[0], # json_obj["response"][0]
+                    element_description="input[name='firstName']",
+                    text=user_data["first_name"]
                 )
+                print("✅ Entered First Name")
+    
+                await asyncio.sleep(4)
+    
+                # Fill in Last Name
+                await self.client.windows.type(
+                    session_id=session_id,
+                    window_id=window_id,
+                    element_description="input[name='lastName']",
+                    text=user_data["last_name"]
+                )
+                print("✅ Entered Last Name")
  
-                await asyncio.sleep(5)
- 
+                await asyncio.sleep(4)
+    
+                available_phone = await self.client.windows.page_query(
+                    session_id=session_id,
+                    window_id=window_id,
+                    prompt= "Do you see a text 'Phone number'  on the page? Answer only Y/N."
+                    # prompt="Do you see a label[for='input-phoneNumber'] or span[class='dd-privacy-allow css-bev4h3 e37uo190'] on the page? Answer only Y/N."
+                )
+    
+                print(f"Phone Number Field Availabel? {available_phone}")  
+    
+                await asyncio.sleep(2)
+    
+                if available_phone.data.model_response == 'Y' :
+    
+                    if user_data['resume'].get("personal_details").get("contact").get("phone_number_country"):
+                        phone_code = user_data['resume'].get("personal_details").get("contact").get("phone_number_country")
+                    else:
+                        phone_code = 'United States'
+    
+                    if user_data['resume'].get("personal_details").get("contact").get("phone"):
+                        phone  = user_data['resume'].get("personal_details").get("contact").get("phone")
+                    else:
+                        phone = ""
+                        # phone = '212-456-7890'
+    
+                    print(f"code: {phone_code}, phone: {phone}")
+    
+                    await self.client.windows.type(
+                        session_id=session_id,
+                        window_id=window_id,
+                        element_description=f"Select Field with aria-label='Phone number country' for 'Phone number'",
+                        # "Select Field with aria-label='Phone number country' for '{json_obj["name"]}'
+                        text=phone_code[0], # json_obj["response"][0]
+                    )
+    
+                    await asyncio.sleep(5)
+    
+                    await self.client.windows.click(
+                        session_id = session_id,
+                        window_id=window_id,
+                        element_description=f"Option Field for label='{phone_code}'" # Option Field for label='json_obj["response"]'
+                    )
+            
+                    await asyncio.sleep(5)
+    
+                    # For Entering Phone Number
+                    await self.client.windows.type(
+                        session_id=session_id,
+                        window_id=window_id,
+                        element_description=f"Input Field of type='tel' for 'Phone Number'",
+                        # Input Field of type='tel' for '{json_obj["name"]}'
+                        text=phone, # json_obj["response"]
+                    )
+    
+                    print("✅ Entered Phone Number")
+    
+                    await asyncio.sleep(4)
+    
+                available_email = await self.client.windows.page_query(
+                    session_id=session_id,
+                    window_id=window_id,
+                    prompt = "Do you see an input field for 'email' on the page? Answer only Y/N."
+                    # prompt= "Do you see a input[id='input-email'] or any field for the email on the page? Answer only Y/N."
+                    # prompt="Do you see a label[for='input-phoneNumber'] or span[class='dd-privacy-allow css-bev4h3 e37uo190'] on the page? Answer only Y/N."
+                )
+
+                print(f"available email: {available_email}")
+    
+                await asyncio.sleep(2)
+    
+                if available_email.data.model_response == 'Y' :
+                    # For Entering Email
+                    await self.client.windows.type(
+                        session_id=session_id,
+                        window_id=window_id,
+                        element_description=f"Input Field of type='email' for 'Email'",
+                        # Input Field of type='tel' for '{json_obj["name"]}'
+                        text=user_data["email"], # json_obj["response"]
+                    )
+    
+                    print("✅ Entered Email")
+    
+                    await asyncio.sleep(4)
+    
+                # Click "Continue" on the job listing
                 await self.client.windows.click(
-                    session_id = session_id,
-                    window_id=window_id,
-                    element_description=f"Option Field for label='{phone_code}'" # Option Field for label='json_obj["response"]'
-                )
-           
-                await asyncio.sleep(5)
- 
-                # For Entering Phone Number
-                await self.client.windows.type(
                     session_id=session_id,
                     window_id=window_id,
-                    element_description=f"Input Field of type='tel' for 'Phone Number'",
-                    # Input Field of type='tel' for '{json_obj["name"]}'
-                    text=phone, # json_obj["response"]
+                    element_description="button:has-text('Continue')"
                 )
-   
-                print("✅ Entered Phone Number")
-   
+                print("✅ Clicked on Continue")
+    
                 await asyncio.sleep(4)
- 
-            available_email = await self.client.windows.page_query(
-                session_id=session_id,
-                window_id=window_id,
-                prompt = "Do you see an input field for 'email' on the page? Answer only Y/N."
-                # prompt= "Do you see a input[id='input-email'] or any field for the email on the page? Answer only Y/N."
-                # prompt="Do you see a label[for='input-phoneNumber'] or span[class='dd-privacy-allow css-bev4h3 e37uo190'] on the page? Answer only Y/N."
-            )
 
-            print(f"available email: {available_email}")
- 
-            await asyncio.sleep(2)
- 
-            if available_email.data.model_response == 'Y' :
-                # For Entering Email
-                await self.client.windows.type(
+                # Validate the Phone Number
+                correct_phone = await self.client.windows.page_query(
                     session_id=session_id,
                     window_id=window_id,
-                    element_description=f"Input Field of type='email' for 'Email'",
-                    # Input Field of type='tel' for '{json_obj["name"]}'
-                    text=user_data["email"], # json_obj["response"]
+                    prompt= "Do you see a text 'You must enter a correct phone number.' on the page? Answer only Y/N."
                 )
-   
-                print("✅ Entered Email")
-   
-                await asyncio.sleep(4)
-   
-            # Click "Continue" on the job listing
-            await self.client.windows.click(
-                session_id=session_id,
-                window_id=window_id,
-                element_description="button:has-text('Continue')"
-            )
-            print("✅ Clicked on Continue")
-   
-            await asyncio.sleep(4)
-
-            # Validate the Phone Number
-            correct_phone = await self.client.windows.page_query(
-                session_id=session_id,
-                window_id=window_id,
-                prompt= "Do you see a text 'You must enter a correct phone number.' on the page? Answer only Y/N."
-            )
- 
-            print(f"Invalid Phone Number? {correct_phone}")
- 
-            if correct_phone.data.model_response == 'Y':
-                return (False, "Invalid Phone Number")
+    
+                print(f"Invalid Phone Number? {correct_phone}")
+    
+                if correct_phone.data.model_response == 'Y':
+                    return (False, "Invalid Phone Number")
            
             await asyncio.sleep(4)
  
@@ -827,9 +934,12 @@ class JobApplicationAutomation:
             print(f"Verifying Email")
  
             if verification_section.data.model_response == 'Y':
+
+                await asyncio.sleep(10)
  
                 # Split the code into digits
                 code = await get_verification_code(target_email=user_data["email"])
+
                 print(f"Verification Code: {code}")
 
                 if not code:
@@ -859,6 +969,76 @@ class JobApplicationAutomation:
                 print("✅ Clicked on Verify")
  
                 await asyncio.sleep(4)
+
+                # Verification Retry
+                retry = 2
+    
+                while retry:
+                    verification_retry = await self.client.windows.page_query(
+                            session_id=session_id,
+                            window_id=window_id,
+                            prompt="Do you see a text like 'That code didn't work. Please recheck and try again.' or a button with text 'Resend code'? Answer only Y/N."
+                    )
+    
+                    await asyncio.sleep(2)
+                    print(f"Verification Retry: {verification_retry}")
+    
+                    if verification_retry.data.model_response == 'Y' :
+
+                        print("Resending the code in 1 minute...")
+
+                        await asyncio.sleep(60)
+    
+                        await self.client.windows.click(
+                            session_id=session_id,
+                            window_id=window_id,
+                            element_description="button[data-testid='email-verification-resend-button'] with text 'Resend code'"
+                        )
+    
+                        print("✅ Clicked on Resend Code")
+    
+                        await asyncio.sleep(4)
+    
+                        code = await get_verification_code(target_email=user_data["email"])
+                        print(f"Verification Code: {code}")
+    
+                        if not code:
+                            return (False, "Verification code is None")
+                        await asyncio.sleep(5)
+    
+                        # Try to enter the full code in one field
+                        await self.client.windows.type(
+                            session_id=session_id,
+                            window_id=window_id,
+                            element_description="input[type='number],input[id='input-passcode']",
+                            text=code
+                        )
+    
+                        print("✅ Entered Verification Code")
+    
+                        # Optional: Small wait before clicking
+                        await asyncio.sleep(4)
+    
+                        # Click the "Verify" button
+                        await self.client.windows.click(
+                            session_id=session_id,
+                            window_id=window_id,
+                            element_description="button[data-testid='continue-button'] with text 'Verify'"
+                        )
+    
+                        print("✅ Clicked on Verify")
+    
+                        await asyncio.sleep(4)
+    
+                        retry -= 1
+
+                        if not retry:
+                            return (False, "Didn't received the verification code")
+    
+                    else:
+                        break
+
+            await asyncio.sleep(4)
  
             await asyncio.to_thread(upload_resume_subprocess, session_id, window_id, RESUME_PATH)
  
@@ -986,7 +1166,9 @@ class JobApplicationAutomation:
             if session_id:
                 await self.client.sessions.terminate(session_id)
                 print("🔚 Session terminated.")
-            return (completed, "")
+            
+            if completed:
+                return (completed, "")
 
 async def run_airtop_automation(joblisting_id, user_email, email, password, first_name, last_name, resume):
     automation = JobApplicationAutomation()
@@ -994,7 +1176,6 @@ async def run_airtop_automation(joblisting_id, user_email, email, password, firs
     data = {
         "jobLink" : fetch_job_link_by_id(joblisting_id),
         # "jobLink" : "https://www.glassdoor.co.in/job-listing/medicaid-claims-analyst-aston-carter-JV_KO0,23_KE24,36.htm?jl=1009775431938&src=GD_JOB_AD&ao=1110586&jrtk=5-yul1-0-1ithbn5tvjn36800-2c0d9f8572bf0527---6NYlbfkN0ChYVx_I3yfZ_JDY3EFoivtqvi_stwnZ_kRt8Dowt_l_T08GzZ4dLfgqREKn0Au9KYbuF1A35levFasuhGfbo505S7hznP6pnfeWzrTqZEEmSuqOGfb2AxRyxRerMLgLAUqPhKRtTzmOCb4U7H9xGS9gbYotSJ45ozk_hYLz7s-x0mlb_8UDRrykQ5z4QwhR5V5IGQgi7PKbscIsceXJ-KJeWbPrzPIxautvkP85-hFVQRD_nuifTn1hixu7DXa8pxgkPnHv9p3_XpcVjpPeKM7lLihINWLwX4r9ykGgdlcI57tbVWZLNG5eI0YK1iarLQlaYEFDxu9jGeWko7aUCTu_j-dE8xd6v0zD97RpoTWNVzLT4Vsm3RARiBmYjssFpDSUBz4jl3cREEh48Acz8y89S-_KhvtJu-ZmPslkNlD8bmR8_hXtD4Zx3TjM_h2c22hnvrpB3Gt3paLq3215Zw_MWvfiQUKknHlQYeRnCOSjMAgH27XPcky3ycSt7b6PYWHcDC3h9dv01vbd8hTetpBdOcmj0gdQskBCBtAwzAWes_ai4aU7jtk--KJsfua0yXTwd__vQUncytFiYOHxS9QzD3N_PU0C2ch9teFjxYxaHSf3m9HHO7C68pLWril7pshwLTLEUzy7RYYGJo4zJZkyBMSpBkVCfzAWn1fU79d5PJB9zInBKL42O7_VAOk1KQG4bxRQsc4CPALSX6S5CdTb6oi9rGvtcouVxHY3Uieb2QSoZczEPSj1FET4JxoDqHrOvIsjk0TQofNhER4_sc7Tk4l9qxdN9UK84cxSE3Q5359NxSVTew7x_DvwgUo_QWUID_giNGdVTq23JwdowYvXk80nvMlowLX6ULHaAL6rDevH-yQ2kDMxHNYNiCbvOhxuAMwM_2WYQZi2F3fX8gMItNv4MhasFBsneyVrayUTTFumVvtGXsNlwTnjfbTxT8kOqt1eu86B3N7qUk8ylPvbeEyC9jeFKBRWE6kvtiUgaxisqAWHVE5iHG_2iSbt3kDt6qjMuOfNQ8g7uOO21gsGRokKt4rWj417Yvoh9aTLJKvTre6iylc2jE5jrx_DiBwghXsrUt5Sv9qNZo5rO6vOUY7iyYwNV_WRwJhPWhLtFZldvY_Q93j1J_-F_O_CjybVXwjvO9GLCbKT4TsVtX_WRCH1_2u7S7XZZy3Yyz7QNxaYVSQIaxw9TjVCbPLohboN3bfNLzAvXkMT91LcBcS6Jx7QtCVQSVx5H7DAtpkFQ%253D%253D&cs=1_eb987dca&s=58&t=SR&pos=114&cpc=3BA4CE39D5B5DEF5&guid=0000019762bb9771baae64f109910230&jobListingId=1009775431938&ea=1&vt=w&cb=1749708151507&ctt=1749729276401",
-        # "jobLink" : "https://www.glassdoor.co.in/job-listing/medicaid-claims-analyst-aston-carter-JV_KO0,23_KE24,36.htm?jl=1009775431938&src=GD_JOB_AD&ao=1110586&jrtk=5-yul1-0-1ithbn5tvjn36800-2c0d9f8572bf0527---6NYlbfkN0ChYVx_I3yfZ_JDY3EFoivtqvi_stwnZ_kRt8Dowt_l_T08GzZ4dLfgqREKn0Au9KYbuF1A35levFasuhGfbo505S7hznP6pnfeWzrTqZEEmSuqOGfb2AxRyxRerMLgLAUqPhKRtTzmOCb4U7H9xGS9gbYotSJ45ozk_hYLz7s-x0mlb_8UDRrykQ5z4QwhR5V5IGQgi7PKbscIsceXJ-KJeWbPrzPIxautvkP85-hFVQRD_nuifTn1hixu7DXa8pxgkPnHv9p3_XpcVjpPeKM7lLihINWLwX4r9ykGgdlcI57tbVWZLNG5eI0YK1iarLQlaYEFDxu9jGeWko7aUCTu_j-dE8xd6v0zD97RpoTWNVzLT4Vsm3RARiBmYjssFpDSUBz4jl3cREEh48Acz8y89S-_KhvtJu-ZmPslkNlD8bmR8_hXtD4Zx3TjM_h2c22hnvrpB3Gt3paLq3215Zw_MWvfiQUKknHlQYeRnCOSjMAgH27XPcky3ycSt7b6PYWHcDC3h9dv01vbd8hTetpBdOcmj0gdQskBCBtAwzAWes_ai4aU7jtk--KJsfua0yXTwd__vQUncytFiYOHxS9QzD3N_PU0C2ch9teFjxYxaHSf3m9HHO7C68pLWril7pshwLTLEUzy7RYYGJo4zJZkyBMSpBkVCfzAWn1fU79d5PJB9zInBKL42O7_VAOk1KQG4bxRQsc4CPALSX6S5CdTb6oi9rGvtcouVxHY3Uieb2QSoZczEPSj1FET4JxoDqHrOvIsjk0TQofNhER4_sc7Tk4l9qxdN9UK84cxSE3Q5359NxSVTew7x_DvwgUo_QWUID_giNGdVTq23JwdowYvXk80nvMlowLX6ULHaAL6rDevH-yQ2kDMxHNYNiCbvOhxuAMwM_2WYQZi2F3fX8gMItNv4MhasFBsneyVrayUTTFumVvtGXsNlwTnjfbTxT8kOqt1eu86B3N7qUk8ylPvbeEyC9jeFKBRWE6kvtiUgaxisqAWHVE5iHG_2iSbt3kDt6qjMuOfNQ8g7uOO21gsGRokKt4rWj417Yvoh9aTLJKvTre6iylc2jE5jrx_DiBwghXsrUt5Sv9qNZo5rO6vOUY7iyYwNV_WRwJhPWhLtFZldvY_Q93j1J_-F_O_CjybVXwjvO9GLCbKT4TsVtX_WRCH1_2u7S7XZZy3Yyz7QNxaYVSQIaxw9TjVCbPLohboN3bfNLzAvXkMT91LcBcS6Jx7QtCVQSVx5H7DAtpkFQ%253D%253D&cs=1_eb987dca&s=58&t=SR&pos=114&cpc=3BA4CE39D5B5DEF5&guid=0000019762bb9771baae64f109910230&jobListingId=1009775431938&ea=1&vt=w&cb=1749708151507&ctt=1749724666940",
         "user_email" : user_email,
         "email" : email,
         "password" : password,

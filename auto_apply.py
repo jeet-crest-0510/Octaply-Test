@@ -315,10 +315,11 @@ async def controller(resume_id=None, jobListingId=None, run_count=0, duplicacy_o
         key=resume.get("key")
         cover_letter=fetch_cover_letter(key)
 
+        raise Exception()
+
         if(check_user_validity(key)==False):
             logger.info(f"No payment,Resume_id: {resume_id}, jobListingId: {jobListingId}")
 
-            # raise Exception()
             exit()
             # return
         if(check_job_exists(resume_id, key, jobListingId) and duplicacy_override==False):

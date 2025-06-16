@@ -95,6 +95,8 @@ async def parse_and_answer_all_questions_airtop(client, session, window, resume,
 
     await asyncio.sleep(4)
 
+    print(f"Response for Page Query: {response}")
+
     # valid_labels = get_visible_field_labels(driver)
     # final_result = filter_airtop_fields(response, valid_labels)
     # print(final_result)
