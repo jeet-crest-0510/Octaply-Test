@@ -563,7 +563,7 @@ class JobApplicationAutomation:
             await self.client.windows.click(
                 session_id=session_id,
                 window_id=window_id,
-                element_description="A button element with class button_Button__MlD2g and data-test='easyApply', nested inside a container with class JobDetails_applyButtonContainer__L36Bs. It contains a unique SVG lightning bolt icon and text 'Easy Apply', indicating a special one-click job application action."
+                element_description="A button element with class button_Button__MlD2g and data-test='easyApply', nested inside a container with class JobDetails_applyButtonContainer__L36Bs. It contains a unique SVG lightning bolt icon and text 'Easy Apply' or 'Sign in to apply', indicating a special one-click job application action."
             )
             print("✅ Clicked on Easy Apply")
  
