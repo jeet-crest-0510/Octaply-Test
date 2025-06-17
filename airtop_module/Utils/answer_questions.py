@@ -1,4 +1,5 @@
 import openai
+import json
 from Utils.constants import OPENAI_API_KEY
 from PyPDF2 import PdfReader
 import os
@@ -7,6 +8,9 @@ import re
 openai.api_key = OPENAI_API_KEY
  
 def get_response_from_prompt(json_format, resume):
+    
+    print("Generating Response from the Model...")
+
     system_instruction="You are a helpful assistant. Provide the answer as short as possible"
 
     first_name=resume.get("personal_details").get("name").get("first")
@@ -29,7 +33,7 @@ def get_response_from_prompt(json_format, resume):
     {text}
     
     **Input:**
-    {json_format}
+    {json.dumps(json_format, indent=2)}
 
     1. Each question is provided as a JSON object with "type" and "name" fields.
     2. You must go through **each question** one by one.
@@ -51,35 +55,35 @@ def get_response_from_prompt(json_format, resume):
 
     7. Your final answer must follow this format strictly:
     ```json
-    {
-      "output": [
-        {
-          "type": "text_field",
-          "name": "Address",
-          "response": "Surat, Gujarat"
-        },
-        {
-          "type": "text_field",
-          "name": "Address #2(optional)",
-          "response": "Not Found"
-        },
-        {
-          "type": "text_field",
-          "name": "City",
-          "response": "Surat"
-        },
-        {
-          "type": "text_field",
-          "name": "Zip/Postal Code",
-          "response": "395007"
-        },
-        {
-          "type": "select_field",
-          "name": "Country",
-          "response": "India"
-        }
-      ]
-    }
+    {{
+    "output": [
+      {{
+        "type": "text_field",
+        "name": "Address",
+        "response": "Surat, Gujarat"
+      }},
+      {{
+        "type": "text_field",
+        "name": "Address #2(optional)",
+        "response": "Not Found"
+      }},
+      {{
+        "type": "text_field",
+        "name": "City",
+        "response": "Surat"
+      }},
+      {{
+        "type": "text_field",
+        "name": "Zip/Postal Code",
+        "response": "395007"
+      }},
+      {{
+        "type": "select_field",
+        "name": "Country",
+        "response": "India"
+      }}
+    ]
+  }}
 
     Strictly include all the input fields in the response as shown in the output
 
@@ -89,13 +93,15 @@ def get_response_from_prompt(json_format, resume):
         {"role": "system", "content": system_instruction},
         {"role": "user", "content": prompt}
     ]
+
+    print("Prompt Message: ", messages)
  
     try:
         chat = openai.ChatCompletion.create( 
             model="gpt-3.5-turbo", messages=messages 
         )
  
-        # print(completion)
+        print(f"Chat Response: {chat}")
 
         reply = chat.choices[0].message.content.strip()
         print("Response:\n", reply)

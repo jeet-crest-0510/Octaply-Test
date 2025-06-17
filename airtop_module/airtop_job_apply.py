@@ -1128,7 +1128,7 @@ class JobApplicationAutomation:
                 prompt="Do you see a button or link labeled 'Continue' on the page? Answer only Y/N."
             )   
 
-            print(available)
+            print(f"Continue Button available? {available}")
 
             await asyncio.sleep(4)
 
@@ -1153,7 +1153,7 @@ class JobApplicationAutomation:
                     prompt="Do you see a button or link labeled 'Continue' on the page? Answer only Y/N."
                 )   
                 
-                print(available)
+                print(f"Continue Button available? {available}")
 
                 await asyncio.sleep(4)
 
