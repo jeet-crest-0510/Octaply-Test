@@ -45,7 +45,7 @@ def timeout_handler(timeout_seconds):
                 return await asyncio.wait_for(func(*args, **kwargs), timeout=timeout_seconds)
             except asyncio.TimeoutError:
                 print(f"❌ Operation timed out after {timeout_seconds} seconds")
-                return False
+                return (False, "Operation timed out")
         return wrapper
     return decorator
 
@@ -543,6 +543,45 @@ class JobApplicationAutomation:
             print(f"original_tabs: {original_tabs}")
 
             await asyncio.sleep(5)
+
+
+            # checking for the timeout
+
+            # try:
+            #     async def task():
+            #         # 1️⃣ Check if window.open is blocked
+            #         is_active = browser.execute_script(
+            #             "return typeof window.open !== 'function' || window.open.toString().includes('Blocked window.open');"
+            #         )
+            #         print(f"✅ Blocking active: {is_active}")
+
+            #         # 2️⃣ Run Airtop page query
+            #         employer_site = await self.client.windows.page_query(
+            #             session_id=session_id,
+            #             window_id=window_id,
+            #             prompt=(
+            #                 "If you see a Button or heading on the page that says 'Apply on employer site?' Answer with 'E'. "
+            #                 "If you see A Button or heading on the page that contains text 'Easy Apply' or 'Sign in to apply', "
+            #                 "indicating a special one-click job application action, Answer with 'Y'. "
+            #                 "Else If you don't find anything as described above, Answer with 'N'. "
+            #                 "Answer only with 'E/Y/N'"
+            #             )
+            #         )
+
+            #         print("🔍 Employer site detection result:", employer_site.data)
+            #         return employer_site
+
+            #     # 3️⃣ Apply timeout to entire block
+            #     result = await asyncio.wait_for(task(), timeout=120)
+                
+
+            # except asyncio.TimeoutError:
+            #     print("❌ Timeout: Operation took too long. Aborting.")
+            #     return (False, "Timeout waiting for browser state.")
+            # except Exception as e:
+            #     print(f"❌ Unexpected Error: {e}")
+            #     return (False, f"Exception in Timeout waiting: {str(e)}")
+
 
             # -------------------- 👇 Login + Easy Apply Flow --------------------
 
