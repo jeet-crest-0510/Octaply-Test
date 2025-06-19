@@ -484,6 +484,9 @@ class JobApplicationAutomation:
             window = await self.client.windows.create(session_id, url=user_data["jobLink"])
             window_id = window.data.window_id
 
+
+            # ----------- Blocker for handling the Redirected window ------------------
+
             # options = Options()
 
             # browser = webdriver.Remote(
@@ -515,6 +518,9 @@ class JobApplicationAutomation:
 
             # is_active = browser.execute_script("return typeof window.open !== 'function' || window.open.toString().includes('Blocked window.open');")
             # print(f"✅ Blocking active: {is_active}")
+
+
+            # ------- Using selenuium to Handle Redirected window ----------------
 
             await asyncio.sleep(5)
             live_view_url = (await self.client.windows.get_window_info(session_id, window_id)).data.live_view_url
@@ -674,6 +680,9 @@ class JobApplicationAutomation:
 
             # await handle_popups(self.client, session_id, window_id, user_data["email"])
 
+
+            # ------- Using Blockers to Handle Redirected window ----------------
+
             # intercepted_urls = get_intercepted_urls(browser)
             # print("📋 Intercepted URLs:", intercepted_urls)
             
@@ -686,12 +695,12 @@ class JobApplicationAutomation:
             # if latest_url:
             #     print(f"🔗 Latest intercepted URL: {latest_url['url']} (Action: {latest_url['action']})")
 
-
             # await asyncio.sleep(5)  # Wait for redirection or new tab
 
             await asyncio.sleep(15)
 
-            # Detect new tab and fetch URL
+
+            # ------- Using selenuium to Fetch Redirected window ----------------
 
             retry = 3
 
@@ -1039,6 +1048,8 @@ class JobApplicationAutomation:
                         break
 
             await asyncio.sleep(4)
+
+            # Uploading the Resume
  
             await asyncio.to_thread(upload_resume_subprocess, session_id, window_id, RESUME_PATH)
 
